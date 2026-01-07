@@ -9,54 +9,13 @@ if (!isset($_SESSION['user_id'])) {
 
 $current_user_id = $_SESSION['user_id'];
 $current_role = $_SESSION['role'] ?? 'client';
-$admin_id = 1; // Assuming Admin is ID 1 (based on db.php seeding)
 
-// Find true Admin ID just in case
-$stmt = $pdo->prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
-$stmt->execute();
-$real_admin_id = $stmt->fetchColumn();
-if ($real_admin_id) $admin_id = $real_admin_id;
-
-// -- CONTEXT MANAGEMENT --
-// If Admin, they can view a specific conversation
+// -- CONTEXT MANAGEMENT (Admin Only) --
 $view_user_id = isset($_GET['reply_to']) ? (int)$_GET['reply_to'] : null;
 
-// -- HANDLE MESSAGE SENDING --
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['message'])) {
-    $msg = trim($_POST['message']);
-    
-    if ($msg) {
-        if ($current_role === 'client') {
-            // Client always sends to Admin
-            $stmt = $pdo->prepare("INSERT INTO messages (user_id, recipient_id, message) VALUES (?, ?, ?)");
-            $stmt->execute([$current_user_id, $admin_id, $msg]);
-            
-            // Notification for Admin
-            $notifMsg = "Nouveau message de " . $_SESSION['username'];
-            $pdo->prepare("INSERT INTO notifications (type, message) VALUES ('message', ?)")->execute([$notifMsg]);
-            
-        } elseif ($current_role === 'admin' && $view_user_id) {
-            // Admin replies to specific user
-            $stmt = $pdo->prepare("INSERT INTO messages (user_id, recipient_id, message) VALUES (?, ?, ?)");
-            $stmt->execute([$current_user_id, $view_user_id, $msg]);
-            
-        }
-    }
-    // Redirect to avoid resubmit
-    if ($current_role === 'admin' && $view_user_id) {
-        header("Location: chat.php?reply_to=" . $view_user_id);
-    } else {
-        header("Location: chat.php");
-    }
-    exit;
-}
-
-// -- FETCH MESSAGES & CONVERSATIONS --
+// Fetch conversations list for Admin sidebar
 $conversations = [];
-$messages = [];
-
 if ($current_role === 'admin') {
-    // 1. Get List of Users who have chatted
     $stmt = $pdo->query("
         SELECT DISTINCT u.id, u.username, 
         (SELECT message FROM messages WHERE (user_id=u.id OR recipient_id=u.id) ORDER BY created_at DESC LIMIT 1) as last_msg,
@@ -68,38 +27,13 @@ if ($current_role === 'admin') {
     ");
     $conversations = $stmt->fetchAll();
     
-    // 2. If viewing a conversation, fetch messages
+    // Get partner name if viewing one
+    $chat_partner_name = '';
     if ($view_user_id) {
-        $stmt = $pdo->prepare("
-            SELECT m.*, u.username, u.role 
-            FROM messages m 
-            JOIN users u ON m.user_id = u.id 
-            WHERE (m.user_id = ? AND m.recipient_id = ?) 
-               OR (m.user_id = ? AND m.recipient_id = ?)
-            ORDER BY m.created_at ASC
-        ");
-        $stmt->execute([$view_user_id, $current_user_id, $current_user_id, $view_user_id]);
-        $messages = $stmt->fetchAll();
-        
-        // Fetch User Name for Header
         $uStmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
         $uStmt->execute([$view_user_id]);
         $chat_partner_name = $uStmt->fetchColumn();
     }
-
-} else {
-    // Client View: Only their own conversation with Admin
-    $stmt = $pdo->prepare("
-        SELECT m.*, u.username, u.role 
-        FROM messages m 
-        JOIN users u ON m.user_id = u.id 
-        WHERE (m.user_id = ? AND m.recipient_id = ?) 
-           OR (m.user_id = ? AND m.recipient_id = ?)
-        ORDER BY m.created_at ASC
-    ");
-    // Messages I sent to Admin OR Admin sent to Me
-    $stmt->execute([$current_user_id, $admin_id, $admin_id, $current_user_id]);
-    $messages = $stmt->fetchAll();
 }
 ?>
 <!DOCTYPE html>
@@ -139,11 +73,11 @@ if ($current_role === 'admin') {
         <div class="glass-panel p-0 overflow-hidden chat-layout d-flex">
             
             <?php if ($current_role === 'admin'): ?>
-            <!-- ADMIN SIDEBAR: User List -->
+            <!-- ADMIN SIDEBAR -->
             <div class="col-md-4 user-list bg-white bg-opacity-50">
                 <div class="p-3 border-bottom fw-bold text-muted small uppercase">DISCUSSIONS</div>
                 <?php if (empty($conversations)): ?>
-                    <p class="p-3 text-muted small">Aucune conversation active.</p>
+                    <p class="p-3 text-muted small">Aucune conversation active. <a href="chat.php">Rafraîchir</a></p>
                 <?php else: ?>
                     <?php foreach ($conversations as $conv): ?>
                         <a href="?reply_to=<?php echo $conv['id']; ?>" class="d-block text-decoration-none text-dark">
@@ -176,26 +110,15 @@ if ($current_role === 'admin') {
                     <?php endif; ?>
 
                     <div class="messages-box" id="msgBox">
-                        <?php if (empty($messages)): ?>
-                            <div class="text-center mt-5 text-muted small">
-                                <p>C'est le début de votre conversation.</p>
-                            </div>
-                        <?php else: ?>
-                            <?php foreach ($messages as $m): 
-                                $isMe = ($m['user_id'] == $current_user_id);
-                            ?>
-                                <div class="message-bubble <?php echo $isMe ? 'msg-sent' : 'msg-received'; ?>">
-                                    <?php echo nl2br(htmlspecialchars($m['message'])); ?>
-                                    <div class="text-end" style="font-size: 0.7em; opacity: 0.7; margin-top: 4px;">
-                                        <?php echo date('H:i', strtotime($m['created_at'])); ?>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                        <!-- Messages loaded via JS -->
+                        <div class="text-center mt-5 text-muted small loading-indicator">
+                            <i class="fas fa-spinner fa-spin"></i> Chargement...
+                        </div>
                     </div>
 
-                    <form method="POST" class="mt-auto d-flex gap-2">
-                        <input type="text" name="message" class="form-control rounded-pill border-0 bg-light shadow-sm py-3 px-4" placeholder="Votre message..." required autocomplete="off">
+                    <form id="chatForm" class="mt-auto d-flex gap-2">
+                        <input type="hidden" name="recipient_id" value="<?php echo $view_user_id; ?>">
+                        <input type="text" id="msgInput" name="message" class="form-control rounded-pill border-0 bg-light shadow-sm py-3 px-4" placeholder="Votre message..." required autocomplete="off">
                         <button type="submit" class="btn btn-primary rounded-circle shadow-sm" style="width: 50px; height: 50px;">
                             <i class="fas fa-paper-plane"></i>
                         </button>
@@ -207,10 +130,84 @@ if ($current_role === 'admin') {
         </div>
     </div>
 
+    <!-- AJAX LOGIC -->
     <script>
-        // Scroll to bottom
-        const box = document.getElementById('msgBox');
-        if(box) box.scrollTop = box.scrollHeight;
+        const chatBox = document.getElementById('msgBox');
+        const chatForm = document.getElementById('chatForm');
+        const msgInput = document.getElementById('msgInput');
+        const currentRole = "<?php echo $current_role; ?>";
+        const replyTo = "<?php echo $view_user_id; ?>";
+        let shouldScroll = true;
+
+        if (chatForm) {
+            // 1. SEND MESSAGE
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                fetch('chat_api.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        msgInput.value = '';
+                        loadMessages(); // Reload immediately
+                        shouldScroll = true;
+                    }
+                });
+            });
+
+            // 2. LOAD MESSAGES
+            function loadMessages() {
+                let url = 'chat_api.php';
+                if (currentRole === 'admin' && replyTo) {
+                    url += '?reply_to=' + replyTo;
+                }
+
+                fetch(url)
+                .then(response => response.json())
+                .then(messages => {
+                    let html = '';
+                    if (messages.length === 0) {
+                        html = '<div class="text-center mt-5 text-muted small"><p>Début de la conversation.</p></div>';
+                    } else {
+                        messages.forEach(m => {
+                            const type = m.is_me ? 'msg-sent' : 'msg-received';
+                            html += `
+                                <div class="message-bubble ${type}">
+                                    ${m.message}
+                                    <div class="text-end" style="font-size: 0.7em; opacity: 0.7; margin-top: 4px;">
+                                        ${m.time}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    // Only update if changed (simple check) or just replace
+                    chatBox.innerHTML = html;
+                    
+                    if (shouldScroll) {
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                        // Only auto-scroll on first load or after sending. 
+                        // If user scrolls up, we shouldn't force down constantly.
+                        // For simplicity in this v1, we force down if near bottom.
+                    }
+                });
+            }
+
+            // Disable auto-scroll if user moves up
+            chatBox.addEventListener('scroll', () => {
+                const isAtBottom = chatBox.scrollHeight - chatBox.scrollTop === chatBox.clientHeight;
+                // Simple logic: if user scrolls up significantly, stop auto scrolling
+            });
+
+            // Poll every 3 seconds
+            loadMessages(); // First load
+            setInterval(loadMessages, 3000);
+        }
     </script>
 </body>
 </html>
