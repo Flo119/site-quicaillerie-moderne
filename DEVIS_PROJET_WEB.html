@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Devis_Développement_Web.pdf</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            background: #525659;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .page {
+            background: white;
+            width: 21cm;
+            min-height: 29.7cm;
+            padding: 2cm;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 50px;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 20px;
+        }
+
+        .company-info h1 {
+            color: #3b82f6;
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+
+        .invoice-details {
+            text-align: right;
+        }
+
+        .client-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 60px;
+        }
+
+        .client-box {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            width: 45%;
+        }
+
+        h3 {
+            color: #1e293b;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        th {
+            background: #3b82f6;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .price-col {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .total-section {
+            float: right;
+            text-align: right;
+            width: 50%;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .grand-total {
+            background: #3b82f6;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.3em;
+            margin-top: 10px;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 2cm;
+            left: 2cm;
+            right: 2cm;
+            text-align: center;
+            font-size: 0.8em;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .print-btn:hover {
+            transform: scale(1.05);
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .page { box-shadow: none; width: 100%; height: auto; margin: 0; padding: 0; }
+            .print-btn { display: none; }
+            @page { margin: 2cm; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="print-btn" onclick="window.print()">🖨️ IMPRIMER / ENREGISTRER PDF</button>
+
+    <div class="page" contenteditable="true">
+        <header>
+            <div class="company-info">
+                <h1>VOTRE AGENCE WEB</h1>
+                <p>Développement de Solutions Numériques Premium</p>
+                <div style="font-size: 0.9em; margin-top: 10px;">
+                    📍 Douala, Cameroun<br>
+                    📞 +237 600 00 00 00<br>
+                    📧 contact@votre-agence.com
+                </div>
+            </div>
+            <div class="invoice-details">
+                <h2 style="color: #64748b; margin: 0;">DEVIS</h2>
+                <p>N° INV-2026-001</p>
+                <p>Date : <span id="date"></span></p>
+                <p>Valide jusqu'au : <span id="valid-date"></span></p>
+            </div>
+        </header>
+
+        <section class="client-section">
+            <div class="client-box">
+                <h3>Émis pour :</h3>
+                <strong>Quincaillerie MODERNE</strong><br>
+                M. Le Directeur<br>
+                Douala, Cameroun
+            </div>
+            <div class="client-box" style="background: #eff6ff;">
+                <h3>Projet :</h3>
+                <strong>Plateforme Web de Gestion & E-commerce</strong><br>
+                Concept : Digitalisation complète activité vente matériaux<br>
+                Ref : WEB-APP-V2
+            </div>
+        </section>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Désignation</th>
+                    <th>Qté</th>
+                    <th>Prix Unitaire</th>
+                    <th class="price-col">Total (FCFA)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <strong>Développement Web Application Premium</strong><br>
+                        <small style="color: #64748b;">
+                        - Design UI/UX "Glassmorphism" moderne & Responsive<br>
+                        - Catalogue Produits dynamique avec gestion de stock<br>
+                        - Système de Panier et Validation Commande WhatsApp<br>
+                        - Module de facturation PDF automatique
+                        </small>
+                    </td>
+                    <td>1</td>
+                    <td>450 000</td>
+                    <td class="price-col">450 000</td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Module Administration Avancé</strong><br>
+                        <small style="color: #64748b;">
+                        - Tableau de bord sécurisé<br>
+                        - Système de Notifications en temps réel<br>
+                        - Gestion des Avis Clients et modération
+                        </small>
+                    </td>
+                    <td>1</td>
+                    <td>Inclus</td>
+                    <td class="price-col">-</td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Pack Déploiement & Hébergement</strong><br>
+                        <small style="color: #64748b;">- Nom de domaine (.com)<br>- Hébergement Serveur Pro (1 an)<br>- Certificat Sécurité SSL</small>
+                    </td>
+                    <td>1</td>
+                    <td>50 000</td>
+                    <td class="price-col">50 000</td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Formation & Prise en main</strong><br>
+                        <small style="color: #64748b;">Session de formation pour le personnel (2h)</small>
+                    </td>
+                    <td>1</td>
+                    <td>25 000</td>
+                    <td class="price-col">25 000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="total-section">
+            <div class="total-row">
+                <span>Total H.T.</span>
+                <span>525 000 FCFA</span>
+            </div>
+            <div class="total-row" style="color: #64748b; font-size: 0.9em;">
+                <span>TVA (Non applicable)</span>
+                <span>0 FCFA</span>
+            </div>
+            <div class="total-row grand-total">
+                <span>NET À PAYER</span>
+                <span>525 000 FCFA</span>
+            </div>
+            
+            <p style="margin-top: 30px; font-size: 0.9em; font-style: italic;">
+                <strong>Conditions de paiement :</strong><br>
+                - 50% à la signature du devis<br>
+                - 50% à la livraison finale
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>Merci de votre confiance !</p>
+            <p>Signature et mention "Bon pour accord" :</p>
+            <br><br>
+            <div style="border-top: 1px dotted #cbd5e1; width: 200px; margin: 0 auto;"></div>
+        </div>
+    </div>
+
+    <script>
+        const d = new Date();
+        document.getElementById('date').innerText = d.toLocaleDateString('fr-FR');
+        d.setDate(d.getDate() + 30);
+        document.getElementById('valid-date').innerText = d.toLocaleDateString('fr-FR');
+    </script>
+</body>
+</html>
