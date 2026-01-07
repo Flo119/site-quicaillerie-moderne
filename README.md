@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Gestion Quincaillerie Moderne
 
 Ce projet est une application web de gestion de quincaillerie créée avec PHP, HTML, CSS (Bootstrap 5) et JavaScript.
@@ -35,3 +36,6 @@ Ensuite, ouvrez votre navigateur et allez sur : [http://localhost:8000](http://l
 - **Espace Admin** : Ajout, suppression et modification (simplifiée) des produits.
 - **Compte Client** : Inscription et connexion.
 - **Chat** : Widget flottant avec liens directs vers WhatsApp/Telegram.
+=======
+# site-quicaillerie-moderne
+>>>>>>> a66b2be540f9463198b84d8db1f9b33b02ba9c52
