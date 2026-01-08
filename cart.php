@@ -70,29 +70,47 @@ foreach ($items as $item) {
                             <a href="index.php" class="btn btn-modern btn-sm">Découvrir nos produits</a>
                         </div>
                     <?php else: ?>
-                        <?php foreach ($items as $item): ?>
-                        <div class="d-flex align-items-center mb-4 border-bottom pb-4">
-                            <img src="<?php echo htmlspecialchars($item['image_url']); ?>" class="rounded" width="80" height="80" style="object-fit:cover;">
-                            <div class="ms-3 flex-grow-1">
-                                <h6 class="fw-bold mb-1"><?php echo htmlspecialchars($item['name']); ?></h6>
-                                <div class="text-muted small"><?php echo number_format($item['price'], 0, ',', ' '); ?> XFA / unité</div>
-                            </div>
-                            
-                            <form action="cart_actions.php" method="POST" class="d-flex align-items-center mx-3">
-                                <input type="hidden" name="action" value="update_qty">
-                                <input type="hidden" name="item_id" value="<?php echo $item['item_id']; ?>">
-                                <input type="number" name="quantity" value="<?php echo $item['quantity']; ?>" min="1" class="form-control form-control-sm text-center" style="width: 60px;" onchange="this.form.submit()">
-                            </form>
-                            
-                            <div class="fw-bold text-end" style="min-width: 100px;">
-                                <?php echo number_format($item['price'] * $item['quantity'], 0, ',', ' '); ?> XFA
-                            </div>
-                            
-                            <a href="cart_actions.php?action=remove&item_id=<?php echo $item['item_id']; ?>" class="btn btn-sm text-danger ms-3">
-                                <i class="fas fa-trash"></i>
-                            </a>
+                        <div class="table-responsive">
+                            <table class="table align-middle text-nowrap">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Produit</th>
+                                        <th>Prix</th>
+                                        <th style="width: 120px;">Quantité</th> <!-- Fixed width for cleaner mobile view -->
+                                        <th>Total</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($items as $item): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="<?php echo htmlspecialchars($item['image_url']); ?>" class="rounded" width="60" height="60" style="object-fit:cover;">
+                                                <div class="ms-3">
+                                                    <h6 class="fw-bold mb-1"><?php echo htmlspecialchars($item['name']); ?></h6>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><?php echo number_format($item['price'], 0, ',', ' '); ?> XFA</td>
+                                        <td>
+                                            <form action="cart_actions.php" method="POST" class="d-flex align-items-center">
+                                                <input type="hidden" name="action" value="update_qty">
+                                                <input type="hidden" name="item_id" value="<?php echo $item['item_id']; ?>">
+                                                <input type="number" name="quantity" value="<?php echo $item['quantity']; ?>" min="1" class="form-control form-control-sm text-center" onchange="this.form.submit()">
+                                            </form>
+                                        </td>
+                                        <td class="fw-bold"><?php echo number_format($item['price'] * $item['quantity'], 0, ',', ' '); ?> XFA</td>
+                                        <td>
+                                            <a href="cart_actions.php?action=remove&item_id=<?php echo $item['item_id']; ?>" class="btn btn-sm text-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
-                        <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
             </div>

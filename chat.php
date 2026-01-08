@@ -174,13 +174,18 @@ if ($current_role === 'admin') {
                         html = '<div class="text-center mt-5 text-muted small"><p>Début de la conversation.</p></div>';
                     } else {
                         messages.forEach(m => {
+                            // DEBUG: Log to see why is_me might be false
+                            console.log("Msg:", m.id, "Is Me:", m.is_me, "User:", m.username);
+                            
                             const type = m.is_me ? 'msg-sent' : 'msg-received';
                             let controls = '';
+                            
+                            // Check effectively
                             if (m.is_me) {
                                 controls = `
-                                    <div class="mt-1 text-end opacity-50 small-controls">
-                                        <a href="#" onclick="editMessage(${m.id}, '${m.message.replace(/'/g, "\\'")}', event)" class="text-white me-2" title="Modifier"><i class="fas fa-pen fa-xs"></i></a>
-                                        <a href="#" onclick="deleteMessage(${m.id}, event)" class="text-white" title="Supprimer"><i class="fas fa-trash fa-xs"></i></a>
+                                    <div class="mt-1 text-end opacity-75 small-controls" style="display:block !important;">
+                                        <a href="#" onclick="editMessage(${m.id}, '${m.message.replace(/'/g, "\\'")}', event)" class="text-white me-2" title="Modifier" style="cursor:pointer;"><i class="fas fa-pen fa-xs"></i></a>
+                                        <a href="#" onclick="deleteMessage(${m.id}, event)" class="text-white" title="Supprimer" style="cursor:pointer;"><i class="fas fa-trash fa-xs"></i></a>
                                     </div>
                                 `;
                             }
