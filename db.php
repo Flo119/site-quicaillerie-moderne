@@ -1,5 +1,10 @@
 <?php
 // db.php
+
+// Configure Session Lifetime (24 hours) to prevent early timeout
+ini_set('session.gc_maxlifetime', 86400);
+session_set_cookie_params(86400);
+
 try {
     // Create (connect to) SQLite database in file
     $pdo = new PDO('sqlite:' . __DIR__ . '/database.sqlite');

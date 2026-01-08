@@ -175,9 +175,19 @@ if ($current_role === 'admin') {
                     } else {
                         messages.forEach(m => {
                             const type = m.is_me ? 'msg-sent' : 'msg-received';
+                            let controls = '';
+                            if (m.is_me) {
+                                controls = `
+                                    <div class="mt-1 text-end opacity-50 small-controls">
+                                        <a href="#" onclick="editMessage(${m.id}, '${m.message.replace(/'/g, "\\'")}', event)" class="text-white me-2" title="Modifier"><i class="fas fa-pen fa-xs"></i></a>
+                                        <a href="#" onclick="deleteMessage(${m.id}, event)" class="text-white" title="Supprimer"><i class="fas fa-trash fa-xs"></i></a>
+                                    </div>
+                                `;
+                            }
                             html += `
                                 <div class="message-bubble ${type}">
                                     ${m.message}
+                                    ${controls}
                                     <div class="text-end" style="font-size: 0.7em; opacity: 0.7; margin-top: 4px;">
                                         ${m.time}
                                     </div>
@@ -186,17 +196,46 @@ if ($current_role === 'admin') {
                         });
                     }
                     
-                    // Only update if changed (simple check) or just replace
-                    chatBox.innerHTML = html;
-                    
-                    if (shouldScroll) {
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                        // Only auto-scroll on first load or after sending. 
-                        // If user scrolls up, we shouldn't force down constantly.
-                        // For simplicity in this v1, we force down if near bottom.
+                    // Only update if changes detected (naive check length) or force refresh
+                    if(chatBox.innerHTML !== html) {
+                        const wasAtBottom = chatBox.scrollHeight - chatBox.scrollTop === chatBox.clientHeight;
+                        chatBox.innerHTML = html;
+                        if(shouldScroll || wasAtBottom) {
+                            chatBox.scrollTop = chatBox.scrollHeight;
+                        }
                     }
                 });
             }
+
+            // DELETE
+            window.deleteMessage = function(id, e) {
+                e.preventDefault();
+                if(!confirm('Supprimer ce message ?')) return;
+                
+                let fd = new FormData();
+                fd.append('action', 'delete');
+                fd.append('msg_id', id);
+                
+                fetch('chat_api.php', { method: 'POST', body: fd })
+                .then(() => loadMessages());
+            };
+
+            // EDIT
+            window.editMessage = function(id, text, e) {
+                e.preventDefault();
+                // Strip HTML br for validation
+                let cleanText = text.replace(/<br\s*\/?>/gi, "");
+                let newText = prompt("Modifier le message :", cleanText);
+                if (newText !== null && newText !== cleanText) {
+                    let fd = new FormData();
+                    fd.append('action', 'edit');
+                    fd.append('msg_id', id);
+                    fd.append('message', newText);
+                    
+                    fetch('chat_api.php', { method: 'POST', body: fd })
+                    .then(() => loadMessages());
+                }
+            };
 
             // Disable auto-scroll if user moves up
             chatBox.addEventListener('scroll', () => {

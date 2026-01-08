@@ -19,30 +19,58 @@ $stmt->execute();
 $real_admin_id = $stmt->fetchColumn();
 if ($real_admin_id) $admin_id = $real_admin_id;
 
-// --- HANDLE POST (SEND MESSAGE) ---
+// --- HANDLE POST (ACTIONS) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $msg = trim($_POST['message'] ?? '');
-    $recipient = isset($_POST['recipient_id']) ? (int)$_POST['recipient_id'] : null;
+    $action = $_POST['action'] ?? 'send';
     
-    // Logic to determine recipient
-    if ($current_role === 'client') {
-        $recipient = $admin_id;
-    }
-    
-    if ($msg && $recipient) {
-        $stmt = $pdo->prepare("INSERT INTO messages (user_id, recipient_id, message) VALUES (?, ?, ?)");
-        $stmt->execute([$current_user_id, $recipient, $msg]);
+    if ($action === 'send') {
+        $msg = trim($_POST['message'] ?? '');
+        $recipient = isset($_POST['recipient_id']) ? (int)$_POST['recipient_id'] : null;
         
-        // Notify if client sending to admin
+        // Logic to determine recipient
         if ($current_role === 'client') {
-            $notifMsg = "Nouveau message de " . $_SESSION['username'];
-            $pdo->prepare("INSERT INTO notifications (type, message) VALUES ('message', ?)")->execute([$notifMsg]);
+            $recipient = $admin_id;
         }
         
-        echo json_encode(['status' => 'success']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Empty message or invalid recipient']);
+        if ($msg && $recipient) {
+            $stmt = $pdo->prepare("INSERT INTO messages (user_id, recipient_id, message) VALUES (?, ?, ?)");
+            $stmt->execute([$current_user_id, $recipient, $msg]);
+            
+            // Notify if client sending to admin
+            if ($current_role === 'client') {
+                $notifMsg = "Nouveau message de " . $_SESSION['username'];
+                $pdo->prepare("INSERT INTO notifications (type, message) VALUES ('message', ?)")->execute([$notifMsg]);
+            }
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Empty message or invalid recipient']);
+        }
+    } 
+    elseif ($action === 'delete') {
+        $msg_id = (int)$_POST['msg_id'];
+        // Verify ownership
+        $stmt = $pdo->prepare("DELETE FROM messages WHERE id = ? AND user_id = ?");
+        $stmt->execute([$msg_id, $current_user_id]);
+        if ($stmt->rowCount() > 0) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Not allowed or not found']);
+        }
     }
+    elseif ($action === 'edit') {
+        $msg_id = (int)$_POST['msg_id'];
+        $new_msg = trim($_POST['message']);
+        if ($new_msg) {
+            $stmt = $pdo->prepare("UPDATE messages SET message = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$new_msg, $msg_id, $current_user_id]);
+            if ($stmt->rowCount() > 0) {
+                 echo json_encode(['status' => 'success']);
+            } else {
+                 echo json_encode(['status' => 'error', 'message' => 'Not allowed or not found']);
+            }
+        }
+    }
+    
     exit;
 }
 
